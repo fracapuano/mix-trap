@@ -1,4 +1,4 @@
-from modules.llm.mistral import (
+from modules.llm.async_mistral import (
     client as mistralclient, 
     ChatMessage, 
     model
@@ -20,7 +20,7 @@ class BaseSpeaker:
         self.messages.append(ChatMessage(role="user", content=content))
     
     def get_news_digest(self, topic: str):
-        news_data = self.news_client.create_news_report(topic)
+        news_data = self.news_client.create_news_report(self.news_client.fetch_news(topic))
         return news_data
     
     def get_basic_knowledge(self, topic: str):
@@ -35,7 +35,7 @@ class BaseSpeaker:
         messages=self.messages
         )
 
-        for chunk in stream:
+        async for chunk in stream:
             yield {
                 "content": chunk.choices[0].delta.content,
                 "content_complete": False
