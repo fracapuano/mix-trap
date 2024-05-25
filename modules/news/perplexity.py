@@ -5,6 +5,7 @@ from typing import Dict, Any, NewType
 
 load_dotenv()
 
+
 url = "https://api.perplexity.ai/chat/completions"
 NewsTopic = NewType("NewsTopic", str)
 JSONPayload = NewType("JSONPayload", Dict[str, Any])
@@ -47,7 +48,7 @@ def get_headers() -> JSONPayload:
         "authorization": f"Bearer {os.getenv('PERPLEXITY_API_KEY')}"
     }
 
-def topic_to_news(topic:NewsTopic) -> str:
+def topic_to_knowledge(topic:NewsTopic) -> str:
     """
     Get the latest news for a given topic using the Perplexity API.
 
@@ -61,6 +62,10 @@ def topic_to_news(topic:NewsTopic) -> str:
     headers = get_headers()
 
     response = requests.post(url, json=payload, headers=headers)
+    return response.json()["choices"][0]["message"]["content"]
 
-    return response.text
 
+if __name__ == "__main__":
+    topic = "Artificial Intelligence today"
+    news = topic_to_knowledge(topic)
+    print(news)

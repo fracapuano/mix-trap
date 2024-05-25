@@ -1,6 +1,6 @@
 import re
 from typing import List
-from ..llm.mistral import chat, ChatMessage
+from modules.llm.mistral import chat, ChatMessage
 
 def extract_topics(text: str) -> list:
     # Regular expression to find the content between <topics> and </topics>
@@ -58,6 +58,7 @@ if __name__=="__main__":
     <assistant>Sure! AI and machine learning have been rapidly evolving. What specific areas are you interested in?</assistant>
     <user>I'm particularly interested in natural language processing and computer vision.</user>
     <assistant>Great! Those are fascinating areas. What do you want to know more about?</assistant>
+
     """
     topics = get_topics(user_input)
     print(topics)  # Output: ['AI and machine learning', 'Natural language processing', 'Computer vision']
