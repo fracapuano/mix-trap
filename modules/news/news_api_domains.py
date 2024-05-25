@@ -1,0 +1,16 @@
+# Trusted global news sources known for factual reporting.
+trusted_domains = ["bbc.com",
+"nytimes.com",
+"washingtonpost.com",
+"theguardian.com",
+"reuters.com",
+"apnews.com",
+"npr.org",
+"aljazeera.com",
+"cbc.ca",
+"france24.com",
+"dw.com",
+"ft.com",
+"economist.com",
+"wsj.com",
+"bloomberg.com"]

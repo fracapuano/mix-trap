@@ -1,6 +1,6 @@
 from mistralai.models.chat_completion import ChatMessage
 from modules.llm.mistral import chat
-from modules.news.news import fetch_news
+from modules.news.news_api import fetch_news
 
 SEARCH_PROMPT = f"""
 ### Instruction
@@ -36,11 +36,13 @@ def build_report(description: str):
     raw_topics = chat([ChatMessage(role="user", content=content)]).split(",")
     topics = [raw_topic.strip() for raw_topic in raw_topics]
     news = []
+    
     for topic in topics:
         news.append(fetch_news(topic))
+    
     report_prompt = f"""
         ### Instruction
-        Based on audience and news, write a radio news report.
+        Based on audience and news, produce a short and very clear report of the news you have access to.
 
         ### Audience
         {description}
@@ -54,5 +56,8 @@ def build_report(description: str):
 
 
 if __name__ == "__main__":
-    result = build_report("I love football!")
+    from time import time
+    start = time()
+    result = build_report("Sports")
+    print(f"Time taken: {time() - start} seconds")
     print("result", result)
