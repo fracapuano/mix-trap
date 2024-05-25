@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "mix-trap"
+version = "0.1.0"
+description = ""
+authors = ["Louis Sanna <louis.sanna@ekimetrics.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
