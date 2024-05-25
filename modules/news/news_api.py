@@ -7,6 +7,17 @@ from datetime import datetime, timedelta
 
 load_dotenv()  # take environment variables from .env.
 
+def prepare_news(news: dict) -> str:
+    output = ""
+    for article in news["articles"]:
+        output += f"""
+        TITLE: {article["title"]}
+        CONTENT: {article["content"]}
+
+        """
+
+    return output
+
 report_prompt = lambda news: f"""
         ### Instruction
         Based on audience and news, produce a short and very clear report of the news you have access to.
@@ -19,15 +30,16 @@ class NewsHandler:
     
     def fetch_news(self, query: str) -> dict:
         all_articles = self.newsapi.get_everything(q=query,
-                                              domains=trusted_domains,
+                                              domains=",".join(trusted_domains),
                                               from_param=(datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                                              language='en',
+                                              #language='en',
                                               sort_by='relevancy')
 
         return all_articles
     
     def create_news_report(self, news: dict) -> str:
-        report = chat([ChatMessage(role="user", content=report_prompt)])
+        processed_news = prepare_news(news)
+        report = chat([ChatMessage(role="user", content=report_prompt(processed_news))])
         return report
 
 # Example usage
@@ -36,6 +48,6 @@ if __name__ == "__main__":
     news_client = NewsHandler()
     # query the handler for news on a given query
     query = "tesla"
-    news_data = news_client.fetch_news(query)
+    news_data = news_client.create_news_report(news_client.fetch_news(query))
     print(news_data)
 
