@@ -1,33 +1,31 @@
-import openai       # communicates with chatGPT
-import json         # data exchanges with chatGPT
-import argparse     # command-line arguments
-import spotipy      # log in and interact with Spotify
-import subprocess   # launch the Spotify app using a bat file
-import webbrowser   # open a playlist in the webbrowser
+import os
+import json     
+import argparse
+import spotipy
+import webbrowser
+from modules.llm.mistral import chat
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Set OpenAI and Spotify keys directly
-OPENAI_API_KEY = "sk-proj-8N8s2X0IuzZmOyWlPf2wT3BlbkFJnkjdMtf4X1FL2k9TbDy7"
-SPOTIPY_CLIENT_ID = 'e710677604ea4728860c0a710afa6c7a'
-SPOTIPY_CLIENT_SECRET = 'eb220e877ca84b58acbfc2e4d7aa98c8'
-SPOTIPY_REDIRECT_URI = 'http://localhost:8888/callback' 
-
-# Set openai key
-openai.api_key = OPENAI_API_KEY
+SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
+SPOTIPY_CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
+SPOTIPY_REDIRECT_URI = 'http://localhost:8888/callback'
 
 # Parsing arguments for command line calls
 parser = argparse.ArgumentParser(description='Simple command line song utility')
-parser.add_argument("--p", type=str, help='The prompt to describe the playlist')
-parser.add_argument("--l", type=int, default=3, help='The length of the playlist')
-parser.add_argument("--n", type=str, default=argparse.SUPPRESS, help='The name of the playlist')
-parser.add_argument("--i", action='store_true', default=False, help='Build interactive or automatic playlist')
+parser.add_argument("--prompt", type=str, help='The prompt to describe the playlist')
+parser.add_argument("--numsongs", type=int, default=10, help='The length of the playlist')
+parser.add_argument("--playlist-name", type=str, default=argparse.SUPPRESS, help='The name of the playlist')
+parser.add_argument("--interactive", action='store_true', default=False, help='Build interactive or automatic playlist')
 args = parser.parse_args()
-if 'n' not in args:
-    args.n = args.p  # use prompt as playlist name if not specified
+if 'playlist_name' not in args:
+    args.playlist_name = args.prompt  # use prompt as playlist name if not specified
 
 separator = f'{100*"-"}'
 
 class SpotifyPlaylist:
-
     def __init__(self, prompt, length=10, name=None, interactive=False):
         '''
         Create SpotifyPlaylist instance with given parameters
@@ -36,7 +34,7 @@ class SpotifyPlaylist:
         self.length = int(length)
         self.name = name if name is not None else prompt
         self.interactive = interactive
-        self.gpt_tracks = []  # list of tracks generated with GPT
+        self.tracks = []  # list of tracks generated with GPT
         self.playlist_tracks = set()  # list of [artist - song] in my playlist
         self.artists_blacklist = set()  # list of blacklisted artists
         self.songs_blacklist = set()  # list of blacklisted songs
@@ -69,9 +67,9 @@ class SpotifyPlaylist:
 
         return result
     
-    def generate_gpt_playlist(self, gpt_model='gpt-3.5-turbo'):
+    def generate_playlist(self):
         """
-        Asks ChatGPT to generate a list of songs based on an input prompt
+        Asks Mistral Large to generate a list of songs based on an input prompt
         """
 
         playlist_example = """
@@ -90,10 +88,6 @@ class SpotifyPlaylist:
         if bad_songs:
             user_content += f", which are not part of this list: {bad_songs}"
         
-        # bad_artists = str(self.artists_blacklist)
-        # if bad_artists:
-        #     user_content += f", which are not from these artists: {bad_artists}"
-            
         self.messages = [
             {"role": "system", "content": """You are a Spotify assistant helping the user create music playlists.
             You should generate a list of artists and songs you consider fit the text prompt.
@@ -104,11 +98,7 @@ class SpotifyPlaylist:
             {"role": "user", "content": user_content}
         ]
 
-        json_response = openai.ChatCompletion.create(
-            messages=self.messages,
-            model=gpt_model,
-            max_tokens=int(self.length * 20 + 250) # based on a ratio 1 song = 20 tokens + 250 prompt
-        )
+        json_response = chat(self.messages)
 
         response = json.loads(json_response["choices"][0]["message"]["content"])
         return response
@@ -133,7 +123,6 @@ class SpotifyPlaylist:
         '''
         Main method called to generate the contents and create the Spotify playlist
         '''
-
         self.login_to_spotify()
 
         # get all playlist names
@@ -168,12 +157,11 @@ class SpotifyPlaylist:
         with the corresponding songs automatically.
         '''
 
-        # asks chatGPT to generate the playlist contents
-        self.gpt_tracks = self.generate_gpt_playlist(gpt_model='gpt-3.5-turbo')
+        # asks Mistral to generate the playlist contents
+        self.mixer_tracks = self.generate_playlist()
         first_song = None
         
-        for item in self.gpt_tracks:
-            
+        for item in self.mixer_tracks:
             # extract artist and song
             artist_name = item['artist']
             song_name = item['song']
@@ -207,13 +195,9 @@ class SpotifyPlaylist:
         # get the current Spotify device
         devices = self.sp.devices()['devices']
 
-        if not devices:
-            # If Spotify is off, start it and play song
-            subprocess.Popen(['open_spotify.bat', song['uri']])
-        else:
-            # activate device and play song
-            self.sp.transfer_playback(devices[0]['id'])
-            self.sp.start_playback(uris=[song['uri']], position_ms=start_position)
+        # activate device and play song
+        self.sp.transfer_playback(devices[0]['id'])
+        self.sp.start_playback(uris=[song['uri']], position_ms=start_position)
 
     def fill_playlist_interactive(self):
         '''
@@ -227,8 +211,8 @@ class SpotifyPlaylist:
         build_playlist = True
         first_song = None
 
-        # asks chatGPT to generate the playlist contents
-        self.gpt_tracks = self.generate_gpt_playlist(gpt_model='gpt-3.5-turbo')
+        # asks Mistral AI to generate the playlist contents
+        self.mistral_tracks = self.generate_playlist()
         
         for item in self.gpt_tracks:
 
@@ -242,21 +226,16 @@ class SpotifyPlaylist:
             song_name = item['song']
             track_name = f'{artist_name} - {song_name}'
             
-            print(separator)
-            
             # ignore songs already in playlist
             if track_name in self.playlist_tracks:
-                print(f'Ignore {song_name} | already in playlist')
                 continue 
 
             # ignore blacklisted artists
             if artist_name in self.artists_blacklist:
-                print(f'Ignore {artist_name} | blacklisted')
                 continue
             
             # ignore blacklisted songs
             if song_name in self.songs_blacklist:
-                print(f'Ignore {song_name} | blacklisted')
                 continue
             
             # search for song
@@ -272,13 +251,6 @@ class SpotifyPlaylist:
             # play song in spotify, start in the middle
             start_position = track['duration_ms'] / 2
             self.play_song_in_spotify(song, start_position)
-            
-            # ask user for input
-            print(f'{track_name}   ({track_id}/{self.length})')
-            print('[1] Add to Playlist')
-            print('[2] Not this song')
-            print('[3] Not this artist')
-            print('[q] Quit playlist generation')
             
             while True:
                 match input('Your choice: '):
@@ -343,12 +315,11 @@ class SpotifyPlaylist:
 
 
 if __name__ == '__main__':
-    
     # parsing arguments for command-line calls
-    prompt = args.p
-    length = args.l
-    name = args.n
-    interactive = args.i
+    prompt = args.prompt
+    length = args.numsongs
+    name = args.playlist_name
+    interactive = args.interactive
 
     print(separator)
     print(' SPOTIFY PLAYLIST GENERATOR '.center(100, '-'))
