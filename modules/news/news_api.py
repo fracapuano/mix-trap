@@ -1,5 +1,4 @@
-import os
-import requests
+from modules.llm.mistral import chat, ChatMessage
 from dotenv import load_dotenv
 from newsapi import NewsApiClient
 from modules.news.news_api_domains import trusted_domains
@@ -8,6 +7,13 @@ from datetime import datetime, timedelta
 
 load_dotenv()  # take environment variables from .env.
 
+report_prompt = lambda news: f"""
+        ### Instruction
+        Based on audience and news, produce a short and very clear report of the news you have access to.
+
+        ### News
+        {news}
+"""
 class NewsHandler:
     newsapi = NewsApiClient(api_key='7885465e86e746fead9f8e035a5b395f')
     
@@ -19,6 +25,10 @@ class NewsHandler:
                                               sort_by='relevancy')
 
         return all_articles
+    
+    def create_news_report(self, news: dict) -> str:
+        report = chat([ChatMessage(role="user", content=report_prompt)])
+        return report
 
 # Example usage
 if __name__ == "__main__":
@@ -28,3 +38,4 @@ if __name__ == "__main__":
     query = "tesla"
     news_data = news_client.fetch_news(query)
     print(news_data)
+
