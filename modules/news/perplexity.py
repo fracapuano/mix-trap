@@ -62,8 +62,7 @@ def topic_to_knowledge(topic:NewsTopic) -> str:
     headers = get_headers()
 
     response = requests.post(url, json=payload, headers=headers)
-
-    return response.text
+    return response.json()["choices"][0]["message"]["content"]
 
 
 if __name__ == "__main__":
