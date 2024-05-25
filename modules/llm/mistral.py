@@ -18,7 +18,6 @@ def chat(messages, tools=[]):
         messages=messages,
         tools=tools,
     )
-    print("chat_response", chat_response)
     return chat_response.choices[0].message.content
 
 
