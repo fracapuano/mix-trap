@@ -225,6 +225,20 @@ orjson = ">=3.9.10,<4.0.0"
 pydantic = ">=2.5.2,<3.0.0"
 
 [[package]]
+name = "newsapi-python"
+version = "0.2.7"
+description = "An unofficial Python client for the News API"
+optional = false
+python-versions = "*"
+files = [
+    {file = "newsapi-python-0.2.7.tar.gz", hash = "sha256:a4b66d5dd9892198cdaa476f7542f2625cdd218e5e3121c8f880b2ace717a3c2"},
+    {file = "newsapi_python-0.2.7-py2.py3-none-any.whl", hash = "sha256:11d34013a24d92ca7b7cbdac84ed2d504862b1e22467bc2a9a6913a70962318e"},
+]
+
+[package.dependencies]
+requests = "<3.0.0"
+
+[[package]]
 name = "orjson"
 version = "3.10.3"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
@@ -466,4 +480,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "4985f16e033615ad1d73b5b0d6aed2f966b77134533bc661737431c48c6a5a3f"
+content-hash = "b86d23dacac2761ad6dac2ed4a966b6b794126f0805385acf7a7714fe3a33dba"
