@@ -98,10 +98,8 @@ class SpotifyPlaylist:
             {"role": "user", "content": user_content}
         ]
 
-        json_response = chat(self.messages)
-
-        response = json.loads(json_response["choices"][0]["message"]["content"])
-        return response
+        result = chat(self.messages)
+        return json.loads(result)
 
     def login_to_spotify(self):
         '''
