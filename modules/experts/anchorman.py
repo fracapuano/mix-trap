@@ -13,7 +13,7 @@ Here's what's happening:
 Your delivery should be clear, factual, and neutral, aiming to provide the audience with a comprehensive understanding of the events without any bias.
 """
 
-class Archorman(BaseSpeaker):
+class Anchorman(BaseSpeaker):
     def __init__(self, topic: str):
         super().__init__(topic=topic)
         self.news_content = self.get_news_digest(topic)
@@ -28,7 +28,7 @@ class Archorman(BaseSpeaker):
 if __name__ == "__main__":
     import asyncio
 
-    broadcaster = Archorman("AI and Technology")
+    broadcaster = Anchorman("AI and Technology")
     async def main():
         output = ""
         async for content in broadcaster.reply("what are the latest "):
